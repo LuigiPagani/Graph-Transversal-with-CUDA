@@ -4,12 +4,15 @@
 #include <device_launch_parameters.h>
 #include <stdio.h>
 #include <time.h>
+#include <sys/time.h>
+
+
 
 // Define constants used in the program
-#define N 1000 // Number of nodes in the graph
+#define N 30000 // Number of nodes in the graph
 #define BQ_CAPACITY 2048 // Capacity of block queue in block queuing kernel
 #define BLOCK_SIZE 512 // Number of threads per block
-#define GRAPH_SIZE 1000 // Size of the graph (number of nodes)
+#define GRAPH_SIZE 30000 // Size of the graph (number of nodes)
 
 // Define the global queuing kernel
 __global__ void gpu_global_queuing_kernel(int *nodePtrs, int *nodeNeighbors, int *nodeVisited, int *currLevelNodes, int *nextLevelNodes, const unsigned int numCurrLevelNodes, int *numNextLevelNodes) {
@@ -174,6 +177,38 @@ void GraphBFS(int *graph, int *visited, int start) {
     cudaFree(d_over);
 }
 
+// Define the sequential BFS function
+void sequentialBFS(int *graph, int *visited, int start) {
+    // Declare a queue for BFS
+    int *queue = (int *)malloc(N * sizeof(int));
+    int front = 0;
+    int back = 0;
+
+    // Mark the start node as discovered and enqueue it
+    visited[start] = 1;
+    queue[back++] = start;
+
+    while (front < back) {
+        // Dequeue a node from the queue
+        int node = queue[front++];
+        // Mark the node as processed
+        visited[node] = 2;
+        // Loop over the neighbors of the node
+        for (int i = 0; i < N; i++) {
+            // If there is an edge between the node and its neighbor and the neighbor has not been visited
+            if (graph[node * N + i] == 1 && visited[i] == 0) {
+                // Mark the neighbor as discovered and enqueue it
+                visited[i] = 1;
+                queue[back++] = i;
+            }
+        }
+    }
+
+    // Free the queue
+    free(queue);
+}
+
+
 // Define the main function
 int main() {
     // Seed the random number generator
@@ -187,21 +222,36 @@ int main() {
     for (int i = 0; i < GRAPH_SIZE; i++) {
         for (int j = 0; j < GRAPH_SIZE; j++) {
             // Assign 1 to the cell with a probability of 0.07, otherwise assign 0
-            graph[i * GRAPH_SIZE + j] = (rand() < RAND_MAX * 0.07) ? 1 : 0;
+            graph[i * GRAPH_SIZE + j] = (rand() < RAND_MAX * 0.01) ? 1 : 0;
         }
     }
 
-    // Measure the time taken by the BFS function
-    clock_t start = clock();
-    GraphBFS(graph, visited, 0);
-    clock_t end = clock();
+    // Create copies of the graph and visited array
+    int *graphCopy = (int *)malloc(GRAPH_SIZE * GRAPH_SIZE * sizeof(int));
+    int *visitedCopy = (int *)calloc(GRAPH_SIZE, sizeof(int));
+    memcpy(graphCopy, graph, GRAPH_SIZE * GRAPH_SIZE * sizeof(int));
+    memcpy(visitedCopy, visited, GRAPH_SIZE * sizeof(int));
 
-    // Print the elapsed time
-    printf("Time elapsed: %.2f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+    // Measure the time taken by the CUDA BFS function
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
+    GraphBFS(graph, visited, 0);
+    gettimeofday(&end, NULL);
+    double elapsed = (end.tv_sec - start.tv_sec) + ((end.tv_usec - start.tv_usec)/1000000.0);
+    printf("Time elapsed by CUDA BFS: %.6f seconds\n", elapsed);
+
+    // Measure the time taken by the sequential BFS function
+    gettimeofday(&start, NULL);
+    sequentialBFS(graphCopy, visitedCopy, 0);
+    gettimeofday(&end, NULL);
+    elapsed = (end.tv_sec - start.tv_sec) + ((end.tv_usec - start.tv_usec)/1000000.0);
+    printf("Time elapsed by sequential BFS: %.6f seconds\n", elapsed);
 
     // Free host memory
     free(graph);
     free(visited);
+    free(graphCopy);
+    free(visitedCopy);
 
     return 0;
 }
