@@ -236,15 +236,19 @@ int main() {
     gettimeofday(&start, NULL);
     GraphBFS(graph, visited, 0);
     gettimeofday(&end, NULL);
-    double elapsed = (end.tv_sec - start.tv_sec) + ((end.tv_usec - start.tv_usec)/1000000.0);
-    printf("Time elapsed by CUDA BFS: %.6f seconds\n", elapsed);
+    double elapsedCUDA = (end.tv_sec - start.tv_sec) + ((end.tv_usec - start.tv_usec)/1000000.0);
+    printf("Time elapsed by CUDA BFS: %.6f seconds\n", elapsedCUDA);
 
     // Measure the time taken by the sequential BFS function
     gettimeofday(&start, NULL);
     sequentialBFS(graphCopy, visitedCopy, 0);
     gettimeofday(&end, NULL);
-    elapsed = (end.tv_sec - start.tv_sec) + ((end.tv_usec - start.tv_usec)/1000000.0);
-    printf("Time elapsed by sequential BFS: %.6f seconds\n", elapsed);
+    double elapsedSequential = (end.tv_sec - start.tv_sec) + ((end.tv_usec - start.tv_usec)/1000000.0);
+    printf("Time elapsed by sequential BFS: %.6f seconds\n", elapsedSequential);
+
+    // Compute and print the ratio of times
+    double ratio = (elapsedCUDA != 0) ? (elapsedSequential / elapsedCUDA) : 0;
+    printf("Ratio of sequential BFS to CUDA BFS: %.6f\n", ratio);
 
     // Free host memory
     free(graph);
