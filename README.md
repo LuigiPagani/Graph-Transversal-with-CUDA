@@ -1,6 +1,3 @@
-Sure, here's an improved version of your README:
-
-```markdown
 # Graph Transversal with CUDA: Breadth-First Search (BFS)
 
 This repository provides an efficient implementation of the Breadth-First Search (BFS) algorithm using CUDA for parallel computing on GPUs. The BFS algorithm is applied to a randomly generated graph, represented as an adjacency matrix.
