@@ -216,12 +216,13 @@ int main() {
     // Allocate memory for the graph and visited array
     int *graph = (int *)malloc(GRAPH_SIZE * GRAPH_SIZE * sizeof(int));
     int *visited = (int *)calloc(GRAPH_SIZE, sizeof(int));
+    double probability = 0.0001;
 
     // Generate a random adjacency matrix
     for (int i = 0; i < GRAPH_SIZE; i++) {
         for (int j = 0; j < GRAPH_SIZE; j++) {
-            // Assign 1 to the cell with a probability of 0.07, otherwise assign 0
-            graph[i * GRAPH_SIZE + j] = (rand() < RAND_MAX * 0.01) ? 1 : 0;
+            // Assign 1 to the cell with a probability of 0.probability, otherwise assign 0
+            graph[i * GRAPH_SIZE + j] = (rand() < RAND_MAX * probability) ? 1 : 0;
         }
     }
 
@@ -258,3 +259,26 @@ int main() {
 
     return 0;
 }
+
+/*
+ * Sure, let's break it down further:
+
+1. `#include` statements: These are the libraries that the program will be using. The CUDA related libraries are included for writing parallel code that runs on a CUDA enabled GPU.
+
+2. `#define` statements: These are constants used in the program. They are used to define the number of nodes in the graph, block queue capacity, the number of threads per block, and the size of the graph.
+
+3. The `gpu_global_queuing_kernel` and `gpu_block_queuing_kernel` functions: These are the GPU kernels that are run in parallel on the GPU. Each thread that runs these kernels performs a small part of the BFS algorithm. These functions use atomic operations to ensure that updates to shared variables are done safely.
+
+4. The `gpu_global_queuing` and `gpu_block_queuing` functions: These functions are used to set up and launch the GPU kernels.
+
+5. The `BFS` function: This is another GPU kernel that performs the BFS algorithm. It is called repeatedly until all nodes in the graph have been visited.
+
+6. The `GraphBFS` function: This is the host function that sets up the data on the host, copies it to the GPU, launches the BFS kernel, and then copies the results back to the host.
+
+7. The `sequentialBFS` function: This function performs the BFS algorithm sequentially on the CPU. It is used for comparison with the parallel implementation.
+
+8. The `main` function: This is where the program starts. It generates a random graph, runs the BFS algorithm on the GPU and on the CPU, and prints out the time each one took. It uses the `gettimeofday` function to get the current time before and after each run, and then calculates the time difference.
+
+9. Memory management: Memory for the graph and visited arrays is dynamically allocated using `malloc` and `calloc`. After the BFS operations are complete, the allocated memory is released using `free`.
+
+ */
